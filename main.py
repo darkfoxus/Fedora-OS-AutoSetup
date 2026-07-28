@@ -11,14 +11,9 @@ ensure_dependencies()
 
 from presenters.MainPresenter import MainPresenter
 
- 
-
-
-
 def main() -> None:
     ensure_dependencies()
     MainPresenter().main()
-
 
 if __name__ == "__main__":
     main()
