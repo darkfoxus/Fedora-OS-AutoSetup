@@ -1,0 +1,51 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# --- Distribution / packaging ---
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Testing / coverage ---
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# --- Type checkers / linters ---
+.mypy_cache/
+.ruff_cache/
+.pyre/
+
+# --- Editors / IDEs ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- OS cruft ---
+.DS_Store
+Thumbs.db
+
+# --- Project-specific runtime state ---
+# rclone bisync/OAuth state, logs, or any local runtime data this
+# tool writes to disk should not be committed. Adjust paths below
+# to wherever your controllers end up writing.
+*.log
+/state/
+/logs/
