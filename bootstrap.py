@@ -46,26 +46,35 @@ def _missing(names: list[str]) -> list[str]:
 
 
 def ensure_dependencies() -> None:
-    if not _missing(_requirement_names()):
-        return  # everything already installed -- fast path, no pip call
-
+    """Install dependencies into a virtual environment.
+    This avoids system Python conflicts (PEP 668) and works everywhere:
+    local dev, Docker, venv, system Python."""
+    from pathlib import Path
+    import os
+    
+    venv_path = Path.home() / ".sensemymusic-venv"
+    venv_bin = venv_path / "bin"
+    venv_pip = venv_bin / "pip"
+    venv_python = venv_bin / "python"
+    
+    # Create venv if it doesn't exist
+    if not venv_path.exists():
+        print("Creating Python virtual environment...")
+        subprocess.check_call([sys.executable, "-m", "venv", str(venv_path)])
+    
+    # Check if dependencies are already installed in venv
+    missing = _missing(_requirement_names())
+    if not missing:
+        # Inject venv into PATH so subprocess calls use it
+        venv_bin_str = str(venv_bin)
+        if venv_bin_str not in os.environ.get("PATH", ""):
+            os.environ["PATH"] = f"{venv_bin_str}:{os.environ.get('PATH', '')}"
+        return  # everything already installed
+    
     print("Installing missing Python dependencies...")
-    try:
-        subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "--user", "-r", str(REQUIREMENTS_FILE)]
-        )
-        return
-    except subprocess.CalledProcessError:
-        pass
-
-    # Fedora 43+ ships an "externally managed" system Python (PEP 668),
-    # which rejects plain pip installs. Since this script IS the system
-    # bootstrap tool, falling back to --break-system-packages here is a
-    # deliberate, visible choice -- not something we do silently.
-    print("Falling back to --break-system-packages (system-managed Python detected)...")
-    subprocess.check_call(
-        [
-            sys.executable, "-m", "pip", "install",
-            "--break-system-packages", "-r", str(REQUIREMENTS_FILE),
-        ]
-    )
+    subprocess.check_call([str(venv_pip), "install", "-r", str(REQUIREMENTS_FILE)])
+    
+    # Add venv to PATH so all subprocess calls use it
+    venv_bin_str = str(venv_bin)
+    if venv_bin_str not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = f"{venv_bin_str}:{os.environ.get('PATH', '')}"

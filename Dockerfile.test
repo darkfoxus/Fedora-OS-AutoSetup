@@ -1,0 +1,32 @@
+FROM fedora:44
+
+RUN dnf install -y \
+    sudo \
+    python3 \
+    python3-pip \
+    git \
+    && dnf clean all
+
+# Create test user with passwordless sudo
+RUN useradd -m -s /bin/bash testuser && \
+    echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+WORKDIR /home/testuser
+COPY . /home/testuser/project
+WORKDIR /home/testuser/project
+
+# Fix ownership
+RUN chown -R testuser:testuser /home/testuser/project
+
+USER testuser
+
+CMD ["/bin/bash"]
+
+## 2. Build
+#  docker build -f Dockerfile.test -t test-installer .
+
+## 3. Run and test
+#  docker run -it --rm test-installer
+
+# Inside container:
+#  python3 main.py

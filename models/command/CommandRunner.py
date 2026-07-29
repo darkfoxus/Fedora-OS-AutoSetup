@@ -53,3 +53,20 @@ class CommandRunner:
             stderr=result.stderr,
             returncode=result.returncode,
         )
+
+    # ========== Generic Query Helpers ==========
+    
+    def is_command_available(self, command: str) -> bool:
+        """Check if command exists in $PATH (generic, reusable)."""
+        result = self.run(["which", command])
+        return result.success
+    
+    def get_env_var(self, var_name: str) -> str | None:
+        """Get environment variable value."""
+        import os
+        return os.getenv(var_name)
+    
+    def file_exists(self, path: str) -> bool:
+        """Check if file/directory exists."""
+        result = self.run(["test", "-f", path])
+        return result.success
