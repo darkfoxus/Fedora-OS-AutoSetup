@@ -1,5 +1,6 @@
 from services.SwapFileService import SwapFileService
 from services.DnfInstallerService import DnfInstallerService
+from services.FlatpakInstallerService import FlatpakInstallerService
 
 class BaseSystemInstallerService:
 
@@ -16,3 +17,6 @@ class BaseSystemInstallerService:
         dnfServ = DnfInstallerService(self.view)
         dnfServ.dnfSystemDependenciesAndPackagesInstaller()
         dnfServ.dnfSystemApplicationsInstaller()
+
+        # Flatpaks
+        FlatpakInstallerService(self.view).flatpakApplicationsInstaller()
