@@ -57,3 +57,19 @@ class MainView:
 
     def show_exit(self) -> None:
         self.console.print("[bold yellow]Exiting.[/bold yellow]")
+
+    # ---- generic status reporting, used by every presenter ----
+    def show_step(self, message: str) -> None:
+        self.console.print(f"[bold blue]→[/bold blue] {message}")
+ 
+    def show_success(self, message: str) -> None:
+        self.console.print(f"[bold green]✓[/bold green] {message}")
+ 
+    def show_warning(self, message: str) -> None:
+        self.console.print(f"[bold yellow]![/bold yellow] {message}")
+ 
+    def show_error(self, message: str) -> None:
+        self.console.print(f"[bold red]✗[/bold red] {message}")
+ 
+    def press_any_key(self) -> None:
+        questionary.press_any_key_to_continue("Press any key to return to the main menu...").ask()
