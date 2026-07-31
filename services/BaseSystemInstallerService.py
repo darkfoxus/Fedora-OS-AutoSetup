@@ -1,6 +1,7 @@
 from services.SwapFileService import SwapFileService
 from services.DnfInstallerService import DnfInstallerService
 from services.FlatpakInstallerService import FlatpakInstallerService
+from services.AppImageInstallerService import AppImageInstallerService
 
 class BaseSystemInstallerService:
 
@@ -20,3 +21,9 @@ class BaseSystemInstallerService:
 
         # Flatpaks
         FlatpakInstallerService(self.view).flatpakApplicationsInstaller()
+
+        #deb install
+        #install_megasync
+
+        # appImage Install
+        AppImageInstallerService(self.view).run()
