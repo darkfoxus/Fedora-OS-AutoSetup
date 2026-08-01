@@ -1,9 +1,11 @@
 from views.mainView import MainView
 from services.BaseSystemInstallerService import BaseSystemInstallerService
-
+from services.DriveManagerService import DriveManagerService
 class MainPresenter:
     def __init__(self) -> None:
         self.view = MainView()
+        self.base_system_service = BaseSystemInstallerService(self.view)
+        self.drive_manager_service = DriveManagerService(self.view)
 
     def main(self) -> None:
         while True:
@@ -13,13 +15,11 @@ class MainPresenter:
                 self.view.show_exit()
                 break
             elif choice == "1":
-                #BaseSystemPresenter(self.view).run()
-                BaseSystemInstallerService(self.view).run();
-                
+                self.base_system_service.run()
                 self.view.press_any_key()
             elif choice == "2":
-                # MountPresenter(self.view).mount_drive_and_shares()
-                self.view.show_warning("Mount Slave Drive + Samba shares — not ported yet.")
+                self.drive_manager_service.run()
+                #self.view.show_warning("Mount Slave Drive + Samba shares — not ported yet.")
                 self.view.press_any_key()
             elif choice == "3":
                 # GnomeDesktopPresenter(self.view).backup()
