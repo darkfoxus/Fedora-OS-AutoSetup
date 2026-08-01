@@ -1,7 +1,7 @@
-from services.SwapFileService import SwapFileService
-from services.DnfInstallerService import DnfInstallerService
-from services.FlatpakInstallerService import FlatpakInstallerService
-from services.AppImageInstallerService import AppImageInstallerService
+from services.baseInstallers.SwapFileService import SwapFileService
+from services.baseInstallers.DnfInstallerService import DnfInstallerService
+from services.baseInstallers.FlatpakInstallerService import FlatpakInstallerService
+from services.baseInstallers.AppImageInstallerService import AppImageInstallerService
 
 class BaseSystemInstallerService:
 
