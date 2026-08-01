@@ -1,11 +1,20 @@
 from views.mainView import MainView
 from services.BaseSystemInstallerService import BaseSystemInstallerService
 from services.DriveManagerService import DriveManagerService
+from models.config.AppConfig import AppConfig
+
 class MainPresenter:
     def __init__(self) -> None:
         self.view = MainView()
+
+        try:
+            self.appConfig = AppConfig.from_dotenv(".env")
+        except ValueError as e:
+            self.view.show_error(str(e))
+            self.appConfig = None
+
         self.base_system_service = BaseSystemInstallerService(self.view)
-        self.drive_manager_service = DriveManagerService(self.view)
+        self.drive_manager_service = DriveManagerService(self.view, self.appConfig)
 
     def main(self) -> None:
         while True:
@@ -18,8 +27,10 @@ class MainPresenter:
                 self.base_system_service.run()
                 self.view.press_any_key()
             elif choice == "2":
-                self.drive_manager_service.run()
-                #self.view.show_warning("Mount Slave Drive + Samba shares — not ported yet.")
+                if self.appConfig is None:
+                    self.view.show_error("Cannot continue: .env is missing required values")
+                else:
+                    self.drive_manager_service.run()
                 self.view.press_any_key()
             elif choice == "3":
                 # GnomeDesktopPresenter(self.view).backup()

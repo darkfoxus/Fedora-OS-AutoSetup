@@ -2,21 +2,11 @@
 Service: Drive manager — mounts a secondary internal drive via fstab and
 sets up a Samba network share via autofs.
 
-Delegates every external command to CommandRunner. /etc/fstab and
-/etc/auto.master/auto.lan are root-owned, so writes to them go through
-`sudo tee`, but reading and filtering their existing content (to avoid
-duplicate entries across runs) happens in pure Python — no sed/grep
-subprocesses. /etc/fstab and /etc/auto.master get a one-time backup
-before their first rewrite, since a broken fstab can mean an unbootable
-system — that risk doesn't apply to auto.lan, which this service owns
-outright.
-
-Configuration (including Samba credentials) comes in via a Config
-object passed to the constructor — this class never reads os.environ
-or a .env file itself. That keeps the dependency explicit and means
-secrets exist only as attributes on the Config instance, never as
-process environment variables that every subprocess this service spawns
-(via CommandRunner -> subprocess.run) would otherwise inherit.
+/etc/fstab and /etc/auto.master/auto.lan are root-owned, so writes to them go through
+`sudo tee`, but reading and filtering their existing content (to avoid duplicate entries 
+across runs) happens in pure Python. /etc/fstab and /etc/auto.master get a one-time backup
+before their first rewrite, since a broken fstab can mean an unbootablesystem — that risk 
+doesn't apply to auto.lan, which this service owns outright.
 """
 
 from __future__ import annotations
@@ -27,7 +17,7 @@ import pwd
 
 from models.command.CommandRunner import CommandRunner
 from models.command.CommandResult import CommandResult
-from models.config.Config import Config
+from models.config.AppConfig import AppConfig
 
 
 class DriveManagerService:
@@ -36,12 +26,11 @@ class DriveManagerService:
     AUTO_MASTER = Path("/etc/auto.master")
     AUTO_LAN = Path("/etc/auto.lan")
     FSTAB = Path("/etc/fstab")
-    SLAVE_DRIVE_LABEL = "Slavito"  # mountpoint becomes /media/<user>/<label>
 
-    def __init__(self, view, config: Config):
+    def __init__(self, view, appConfig: AppConfig):
         self.view = view
-        self.commands = CommandRunner(view)
-        self.config = config
+        self.commandRunner = CommandRunner(view)
+        self.appConfig = appConfig
 
     # ==========================================================
     # Orchestration
@@ -81,7 +70,7 @@ class DriveManagerService:
         return os.environ.get("SUDO_USER") or os.environ.get("USER", "")
 
     def _is_package_installed(self, package: str) -> bool:
-        result = self.commands.run(["rpm", "-q", package])
+        result = self.commandRunner.run(["rpm", "-q", package])
         return result.success
 
     def _read_root_file(self, path: Path) -> str:
@@ -98,15 +87,15 @@ class DriveManagerService:
         creates a backup — a later, possibly-bad run can't overwrite a
         known-good backup with more corruption."""
         backup_path = Path(str(path) + ".bak-original")
-        self.commands.run(["sudo", "cp", "-n", str(path), str(backup_path)])
+        self.commandRunner.run(["sudo", "cp", "-n", str(path), str(backup_path)])
 
     def _write_root_file(self, path: Path, content: str, mode: str | None = None) -> bool:
-        result = self.commands.run(["sudo", "tee", str(path)], input_text=content)
+        result = self.commandRunner.run(["sudo", "tee", str(path)], input_text=content)
         if not self._checked(result, f"Failed writing {path}"):
             return False
 
         if mode:
-            chmod_result = self.commands.run(["sudo", "chmod", mode, str(path)])
+            chmod_result = self.commandRunner.run(["sudo", "chmod", mode, str(path)])
             if not self._checked(chmod_result, f"Failed setting permissions on {path}"):
                 return False
 
@@ -124,9 +113,9 @@ class DriveManagerService:
             self.view.show_error(f"Unknown user '{target_user}'")
             return False
 
-        mountpoint = f"/media/{target_user}/{self.slave_drive.label}"
+        mountpoint = f"/media/{target_user}/{self.appConfig.slave_drive_label}"
 
-        if self.slave_drive.allow_execution:
+        if self.appConfig.slave_drive_mount_with_execution_permissions:
             self.view.show_step("Mounting slave drive WITH execution permissions")
             options = (
                 f"defaults,uid={user_info.pw_uid},gid={user_info.pw_gid},"
@@ -139,11 +128,11 @@ class DriveManagerService:
                 f"dmask=022,fmask=133,noexec"
             )
 
-        entry = f"UUID={self.slave_drive.uuid} {mountpoint} ntfs-3g {options} 0 0"
+        entry = f"UUID={self.appConfig.slave_drive_uuid} {mountpoint} ntfs-3g {options} 0 0"
 
         if not self._is_package_installed("ntfs-3g"):
             self.view.show_step("Installing ntfs-3g")
-            result = self.commands.run(["sudo", "dnf", "install", "-y", "ntfs-3g"], stream=True)
+            result = self.commandRunner.run(["sudo", "dnf", "install", "-y", "ntfs-3g"], stream=True)
             if not self._checked(result, "Failed to install ntfs-3g"):
                 return False
         else:
@@ -156,7 +145,7 @@ class DriveManagerService:
         existing_lines = self._read_root_file(self.FSTAB).splitlines()
         filtered_lines = [
             line for line in existing_lines
-            if f"UUID={self.slave_drive.uuid}" not in line
+            if f"UUID={self.appConfig.slave_drive_uuid}" not in line
         ]
         filtered_lines.append(entry)
         new_content = "\n".join(filtered_lines) + "\n"
@@ -165,21 +154,21 @@ class DriveManagerService:
         if not self._write_root_file(self.FSTAB, new_content):
             return False
 
-        result = self.commands.run(["sudo", "mkdir", "-p", mountpoint])
+        result = self.commandRunner.run(["sudo", "mkdir", "-p", mountpoint])
         if not self._checked(result, f"Failed to create {mountpoint}"):
             return False
 
-        mountpoint_check = self.commands.run(["mountpoint", "-q", mountpoint])
+        mountpoint_check = self.commandRunner.run(["mountpoint", "-q", mountpoint])
         if mountpoint_check.success:
             self.view.show_step(f"{mountpoint} is mounted → unmounting")
-            result = self.commands.run(["sudo", "umount", mountpoint])
+            result = self.commandRunner.run(["sudo", "umount", mountpoint])
             if not self._checked(result, f"Failed to unmount {mountpoint}"):
                 return False
         else:
             self.view.show_step(f"{mountpoint} is not mounted → skipping umount")
 
         self.view.show_step("Mounting all filesystems")
-        result = self.commands.run(["sudo", "mount", "-a"], stream=True)
+        result = self.commandRunner.run(["sudo", "mount", "-a"], stream=True)
         return self._checked(result, "Failed to mount filesystems")
 
     # ==========================================================
@@ -187,26 +176,19 @@ class DriveManagerService:
     # ==========================================================
 
     def _create_samba_credentials(self) -> bool:
-        samba_user = os.environ.get("SAMBA_USER")
-        samba_pass = os.environ.get("SAMBA_PASS")
-
-        if not samba_user or not samba_pass:
-            self.view.show_error(
-                "SAMBA_USER / SAMBA_PASS environment variables are not set"
-            )
-            return False
-
         cred_dir = Path.home() / ".smb"
-        cred_file = cred_dir / f"{self.samba_share.server}.cred"
-
+        cred_file = cred_dir / f"{self.appConfig.samba_server}.cred"
+ 
         if cred_file.exists():
             self.view.show_step(f"✓ Samba credentials already exist at {cred_file}")
             return True
-
+ 
         cred_dir.mkdir(parents=True, exist_ok=True)
-        cred_file.write_text(f"username={samba_user}\npassword={samba_pass}\n")
+        cred_file.write_text(
+            f"username={self.appConfig.samba_user}\npassword={self.appConfig.samba_pass}\n"
+        )
         cred_file.chmod(0o600)
-
+ 
         self.view.show_success(f"Samba credentials created at {cred_file}")
         return True
 
@@ -223,17 +205,17 @@ class DriveManagerService:
             return False
 
         target_home = Path(user_info.pw_dir)
-        cred_file = target_home / ".smb" / f"{self.samba_share.server}.cred"
+        cred_file = target_home / ".smb" / f"{self.appConfig.samba_server}.cred"
 
         if not self._is_package_installed("autofs"):
             self.view.show_step("Installing autofs")
-            result = self.commands.run(["sudo", "dnf", "install", "-y", "autofs"], stream=True)
+            result = self.commandRunner.run(["sudo", "dnf", "install", "-y", "autofs"], stream=True)
             if not self._checked(result, "Failed to install autofs"):
                 return False
         else:
             self.view.show_step("✓ autofs already installed")
 
-        result = self.commands.run(["sudo", "mkdir", "-p", self.AUTOFS_MOUNTPOINT])
+        result = self.commandRunner.run(["sudo", "mkdir", "-p", self.AUTOFS_MOUNTPOINT])
         if not self._checked(result, f"Failed to create {self.AUTOFS_MOUNTPOINT}"):
             return False
 
@@ -259,25 +241,25 @@ class DriveManagerService:
         # entirely (single share per run), so it's a full overwrite
         # rather than a filtered append.
         lan_content = (
-            f"{self.samba_share.mount_name} "
+            f"{self.appConfig.samba_share} "
             f"-fstype=cifs,credentials={cred_file},"
             f"uid={user_info.pw_uid},gid={user_info.pw_gid},"
             f"iocharset=utf8,serverino,soft,cache=loose,actimeo=300 "
-            f"://{self.samba_share.server}/{self.samba_share.share}\n"
+            f"://{self.appConfig.samba_server}/{self.appConfig.samba_share}\n"
         )
 
         if not self._write_root_file(self.AUTO_LAN, lan_content, mode="644"):
             return False
 
-        result = self.commands.run(["sudo", "systemctl", "enable", "autofs"])
+        result = self.commandRunner.run(["sudo", "systemctl", "enable", "autofs"])
         if not self._checked(result, "Failed to enable autofs"):
             return False
 
-        result = self.commands.run(["sudo", "systemctl", "restart", "autofs"])
+        result = self.commandRunner.run(["sudo", "systemctl", "restart", "autofs"])
         if not self._checked(result, "Failed to restart autofs"):
             return False
 
         self.view.show_success(
-            f"Samba mount ready: {self.AUTOFS_MOUNTPOINT}/{self.samba_share.mount_name}"
+            f"Samba mount ready: {self.AUTOFS_MOUNTPOINT}/{self.appConfig.samba_share}"
         )
         return True
