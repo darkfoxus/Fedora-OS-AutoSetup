@@ -42,8 +42,8 @@ class DriveManagerService:
 
         steps = [
             ("Slave drive mount", self._add_slave_mount),
-            ("Samba credentials", self._create_samba_credentials),
-            ("Samba autofs mount", self._add_samba_mount),
+            #("Samba credentials", self._create_samba_credentials),
+            #("Samba autofs mount", self._add_samba_mount),
         ]
 
         for step_name, step_fn in steps:
@@ -119,13 +119,13 @@ class DriveManagerService:
             self.view.show_step("Mounting slave drive WITH execution permissions")
             options = (
                 f"defaults,uid={user_info.pw_uid},gid={user_info.pw_gid},"
-                f"dmask=022,fmask=022,exec"
+                f"dmask=022,fmask=022,exec,nofail"
             )
         else:
             self.view.show_step("Mounting slave drive WITHOUT execution permissions (safer)")
             options = (
                 f"defaults,uid={user_info.pw_uid},gid={user_info.pw_gid},"
-                f"dmask=022,fmask=133,noexec"
+                f"dmask=022,fmask=133,noexec,nofail"
             )
 
         entry = f"UUID={self.appConfig.slave_drive_uuid} {mountpoint} ntfs-3g {options} 0 0"

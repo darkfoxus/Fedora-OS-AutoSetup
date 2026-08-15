@@ -52,29 +52,26 @@ def ensure_dependencies() -> None:
     from pathlib import Path
     import os
     
-    venv_path = Path.home() / ".sensemymusic-venv"
+    venv_path = Path.home() / ".fedoraOsAutosetup-venv"
     venv_bin = venv_path / "bin"
     venv_pip = venv_bin / "pip"
     venv_python = venv_bin / "python"
     
-    # Create venv if it doesn't exist
+    # Are we already running inside this venv? sys.prefix points at the
+    # venv root when active — comparing resolved binary paths doesn't
+    # work here because Fedora's venvs symlink straight to the system
+    # interpreter, so both "system python3" and "venv python" can
+    # resolve to the exact same file.
+    already_in_venv = Path(sys.prefix).resolve() == venv_path.resolve()
+
     if not venv_path.exists():
         print("Creating Python virtual environment...")
         subprocess.check_call([sys.executable, "-m", "venv", str(venv_path)])
-    
-    # Check if dependencies are already installed in venv
-    missing = _missing(_requirement_names())
-    if not missing:
-        # Inject venv into PATH so subprocess calls use it
-        venv_bin_str = str(venv_bin)
-        if venv_bin_str not in os.environ.get("PATH", ""):
-            os.environ["PATH"] = f"{venv_bin_str}:{os.environ.get('PATH', '')}"
-        return  # everything already installed
-    
-    print("Installing missing Python dependencies...")
-    subprocess.check_call([str(venv_pip), "install", "-r", str(REQUIREMENTS_FILE)])
-    
-    # Add venv to PATH so all subprocess calls use it
-    venv_bin_str = str(venv_bin)
-    if venv_bin_str not in os.environ.get("PATH", ""):
-        os.environ["PATH"] = f"{venv_bin_str}:{os.environ.get('PATH', '')}"
+
+    if not already_in_venv:
+        missing = _missing(_requirement_names())
+        if missing:
+            print("Installing missing Python dependencies...")
+            subprocess.check_call([str(venv_pip), "install", "-r", str(REQUIREMENTS_FILE)])
+
+        os.execv(str(venv_python), [str(venv_python)] + sys.argv)

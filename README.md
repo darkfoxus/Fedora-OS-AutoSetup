@@ -121,9 +121,9 @@ Edit `.env` as needed.
 Run the setup script:
 
 ```bash
-chmod +x setup.sh
+chmod +x main.py
 
-./setup.sh
+./main.py
 ```
 
 ---
