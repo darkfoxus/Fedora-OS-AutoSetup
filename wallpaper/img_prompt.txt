@@ -1,0 +1,5 @@
+help me fill the bottom white part of the image the blank
+Carefully inpaint only that specific area by reconstructing the background so it looks natural and seamless.
+Do not modify, enhance, or alter any other part of the image — including colors, lighting, composition, faces, or objects.
+Preserve all original details outside the edited region exactly as they are.
+Ensure the final result looks clean, with no visible traces of the removed text or artifacts.

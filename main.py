@@ -5,14 +5,14 @@
 # Entry point. This file does exactly one thing: instantiate the
 # controller and call its main() method. Nothing else lives here.
 
-# must run before anything that imports rich
+
 from bootstrap import ensure_dependencies
+# Must run before anything that imports third-party packages.
 ensure_dependencies()  
 
 from presenters.MainPresenter import MainPresenter
 
 def main() -> None:
-    ensure_dependencies()
     MainPresenter().main()
 
 if __name__ == "__main__":
