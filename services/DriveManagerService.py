@@ -128,7 +128,10 @@ class DriveManagerService:
                 f"dmask=022,fmask=133,noexec,nofail"
             )
 
-        entry = f"UUID={self.appConfig.slave_drive_uuid} {mountpoint} ntfs-3g {options} 0 0"
+        # ntfs3 is the in-kernel driver (mainlined since 5.15+, built into
+        # Fedora's kernel) — no package required, and more robust against
+        # interrupted writes than the ntfs-3g FUSE driver.
+        entry = f"UUID={self.appConfig.slave_drive_uuid} {mountpoint} ntfs3 {options} 0 0"
 
         if not self._is_package_installed("ntfs-3g"):
             self.view.show_step("Installing ntfs-3g")
@@ -136,7 +139,7 @@ class DriveManagerService:
             if not self._checked(result, "Failed to install ntfs-3g"):
                 return False
         else:
-            self.view.show_step("✓ ntfs-3g already installed")
+            self.view.show_step("✓ ntfs-3g already installed (repair tooling)")
 
         self._backup_once(self.FSTAB)
 
