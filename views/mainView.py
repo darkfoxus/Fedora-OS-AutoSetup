@@ -26,6 +26,15 @@ MENU_STYLE = questionary.Style([
 
 
 class MainView:
+
+    OPTION_EXIT = "0"
+    OPTION_BASE_SYSTEM = "1"
+    OPTION_NTFS3 = "2"
+    OPTION_DRIVE_MANAGER = "3"
+    OPTION_GNOME_BACKUP = "4"
+    OPTION_GNOME_RESTORE = "5"
+    OPTION_RCLONE = "6"
+
     def __init__(self) -> None:
         self.console = Console()
 
@@ -35,12 +44,13 @@ class MainView:
         choice = questionary.select(
             "Select an option:",
             choices=[
-                Choice("Base system Install", value="1"),
-                Choice("Mount Slave Drive + Samba shares", value="2"),
-                Choice("Gnome Desktop backup...", value="3"),
-                Choice("Gnome Desktop restore...", value="4"),
-                Choice("Rclone / Google Drive Sync Options", value="5"),
-                Choice("Exit", value="0"),
+                Choice("Base system Install", value=self.OPTION_BASE_SYSTEM),
+                Choice("Configure NTFS3 as default NTFS driver", value=self.OPTION_NTFS3),
+                Choice("Mount Slave Drive + Samba shares", value=self.OPTION_DRIVE_MANAGER),
+                Choice("Gnome Desktop backup...", value=self.OPTION_GNOME_BACKUP),
+                Choice("Gnome Desktop restore...", value=self.OPTION_GNOME_RESTORE),
+                Choice("Rclone / Google Drive Sync Options", value=self.OPTION_RCLONE),
+                Choice("Exit", value=self.OPTION_EXIT),
             ],
             style=MENU_STYLE,
         ).ask()
