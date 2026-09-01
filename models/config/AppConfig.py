@@ -13,27 +13,37 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class AppConfig:
+    # global base path
+    project_root: Path
+
+    # grub customization properties
+    grub_custom_theme_installation:bool
+    grub_custom_theme_file: str
+
+    # slave drive properties
     slave_drive_label: str
     slave_drive_uuid: str
     slave_drive_mount_with_execution_permissions: bool
 
+    # samba seerver properties
     samba_server: str
     samba_share: str
     samba_user: str
     samba_pass: str
 
+    # rclone properties
     rclone_remote_name: str
     rclone_remote_path: str
     rclone_local_path: str
     rclone_sync_interval: str
 
     @classmethod
-    def from_dotenv(cls, path: str | Path = ".env") -> "AppConfig":
-        """Raises ValueError immediately, listing every missing key at
-        once, if a required value isn't present — validation happens
-        here, one time, rather than each service discovering a missing
-        value on its own partway through doing something."""
-        values = _parse_dotenv(path)
+    def from_dotenv(cls, path: str | Path | None = None, project_root: str | Path | None = None) -> "AppConfig":
+        """Load class properties from .env file and Raises ValueError immediately for every missing key"""
+        resolved_root = Path(project_root) if project_root is not None else Path.cwd()
+        resolved_path = Path(path) if path is not None else resolved_root / ".env"
+
+        values = _parse_dotenv(resolved_path)
         missing: list[str] = []
 
         def require(key: str) -> str:
@@ -50,8 +60,20 @@ class AppConfig:
             if raw is None:
                 return default
             return raw.strip().lower() in ("1", "true", "yes", "on")
+ 
+        grub_theme_enabled = boolean("GRUB_CUSTOM_THEME_INSTALATION")
 
         config = cls(
+            project_root=resolved_root,
+
+            grub_custom_theme_installation=grub_theme_enabled,
+            # only hard-require the filename when the feature is actually on —
+            # keeps the .env valid for people who leave theming disabled
+            grub_custom_theme_file=(
+                require("GRUB_CUSTOM_THEME_FILE") if grub_theme_enabled
+                else optional("GRUB_CUSTOM_THEME_FILE")
+            ),
+
             slave_drive_label=require("SLAVE_DRIVE_LABEL"),
             slave_drive_uuid=require("SLAVE_DRIVE_UUID"),
             slave_drive_mount_with_execution_permissions=boolean(
@@ -77,10 +99,7 @@ class AppConfig:
 
 
 def _parse_dotenv(path: str | Path) -> dict[str, str]:
-    """Parses a .env file into a plain dict. Does not touch os.environ
-    or any other global state — the returned dict is the only thing
-    that carries these values forward.
-
+    """Parses a .env file into a plain dict. 
     Conventions, matching standard .env behavior:
     - Blank lines and lines starting with '#' are ignored.
     - Everything after the first '=' is the value — an inline '#'
@@ -94,7 +113,7 @@ def _parse_dotenv(path: str | Path) -> dict[str, str]:
     values: dict[str, str] = {}
 
     if not env_path.exists():
-        return values
+         raise ValueError(f"No .env file found at {env_path.resolve()}")
 
     for raw_line in env_path.read_text().splitlines():
         line = raw_line.strip()

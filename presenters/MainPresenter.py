@@ -7,16 +7,11 @@ from models.config.AppConfig import AppConfig
 
 
 class MainPresenter:
-    def __init__(self) -> None:
+    def __init__(self, appConfig: AppConfig) -> None:
         self.view = MainView()
+        self.appConfig = appConfig
 
-        try:
-            self.appConfig = AppConfig.from_dotenv(".env")
-        except ValueError as e:
-            self.view.show_error(str(e))
-            self.appConfig = None
-
-        self.base_system_service = BaseSystemInstallerService(self.view)
+        self.base_system_service = BaseSystemInstallerService(self.view, self.appConfig)
         self.drive_manager_service = DriveManagerService(self.view, self.appConfig)
         self.ntfs3_driver_service = Ntfs3DriverService(self.view)
 

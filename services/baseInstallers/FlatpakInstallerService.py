@@ -52,7 +52,9 @@ class FlatpakInstallerService:
             ("Rhythmbox", self._install_rhythmbox),
             ("Mission Center", self._install_mission_center),
             ("Kate", self._install_kate),
-            ("Dolphin (KDE File Manager)", self._install_dolphin),
+            # Dolphin is removed as it shows better behaviour as a system package
+            ## TODO: needs to be moved there, installed, check findout and install kde dependiencies it needs and requieres testing
+            #("Dolphin (KDE File Manager)", self._install_dolphin),
             ("DBeaver Community", self._install_dbeaver),
             ("Raspberry Pi Imager", self._install_rpi_imager),
             ("Freeplane", self._install_freeplane),
