@@ -119,13 +119,19 @@ class DriveManagerService:
             self.view.show_step("Mounting slave drive WITH execution permissions")
             options = (
                 f"defaults,uid={user_info.pw_uid},gid={user_info.pw_gid},"
-                f"dmask=022,fmask=022,exec,nofail"
+                f"dmask=022,fmask=022,exec,nofail,sync"
+                # nofail: boot continues even if this drive is missing/unplugged,
+                # instead of dropping to an emergency shell.
+                # sync: fstab entries bypass udisks2's mount_options.conf entirely,
+                # so this must be set here directly to force every write to block
+                # until physically committed to the device.
             )
         else:
             self.view.show_step("Mounting slave drive WITHOUT execution permissions (safer)")
             options = (
                 f"defaults,uid={user_info.pw_uid},gid={user_info.pw_gid},"
-                f"dmask=022,fmask=133,noexec,nofail"
+                f"dmask=022,fmask=133,noexec,nofail,sync"
+                # same oprions besides fmask
             )
 
         # ntfs3 is the in-kernel driver (mainlined since 5.15+, built into

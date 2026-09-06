@@ -22,8 +22,10 @@ class Ntfs3DriverService:
 
     UDISKS_CONFIG = Path("/etc/udisks2/mount_options.conf")
 
+    # `sync` forces every write to block until physically committed to the device, preventing silent 
+    # corruption if the drive is pulled before the async page-cache flush finishes (same size, wrong content).
     NTFS3_DEFAULTS = (
-        "ntfs:ntfs3_defaults=uid=$UID,gid=$GID"
+        "ntfs:ntfs3_defaults=uid=$UID,gid=$GID,sync"
     )
 
     NTFS3_ALLOW = (
@@ -37,7 +39,8 @@ class Ntfs3DriverService:
         "showmeta,noshowmeta,"
         "prealloc,noprealloc,"
         "hide_dot_files,nohide_dot_files,"
-        "windows_names,nocase,case"
+        "windows_names,nocase,case,"
+        "sync"  # must also be in the allow-list, or udisks2 will reject/strip it
     )
 
     NTFS3_DRIVERS = "ntfs_drivers=ntfs3,ntfs"
