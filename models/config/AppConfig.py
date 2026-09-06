@@ -21,9 +21,14 @@ class AppConfig:
     grub_custom_theme_file: str
 
     # slave drive properties
+    slave_drive_automount: bool
     slave_drive_label: str
     slave_drive_uuid: str
     slave_drive_mount_with_execution_permissions: bool
+
+    # udisks2 mount behavior properties
+    ntfs3_driver_installation: bool
+    exfat_sync_installation: bool
 
     # samba seerver properties
     samba_server: str
@@ -73,11 +78,14 @@ class AppConfig:
                 require("GRUB_CUSTOM_THEME_FILE") if grub_theme_enabled
                 else optional("GRUB_CUSTOM_THEME_FILE")
             ),
-
+            slave_drive_automount=boolean("SLAVE_DRIVE_AUTOMOUNT"),
             slave_drive_label=require("SLAVE_DRIVE_LABEL"),
             slave_drive_uuid=require("SLAVE_DRIVE_UUID"),
             slave_drive_mount_with_execution_permissions=boolean(
                 "SLAVE_DRIVE_MOUNT_WITH_EXECUTION_PERMISSIONS"),
+
+            ntfs3_driver_installation=boolean("NTFS3_DRIVER_INSTALLATION"),
+            exfat_sync_installation=boolean("EXFAT_SYNC_INSTALLATION"),
             
             samba_server=require("SAMBA_SERVER"),
             samba_share=require("SAMBA_SHARE"),

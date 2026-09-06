@@ -1,9 +1,9 @@
 from services.baseInstallers.SwapFileService import SwapFileService
 from services.baseInstallers.DnfInstallerService import DnfInstallerService
-from services.baseInstallers.FlatpakInstallerService import FlatpakInstallerService
-from services.baseInstallers.AppImageInstallerService import AppImageInstallerService
-from services.baseInstallers.RPMPackageInstallerService import RPMPackageInstallerService
-from services.baseInstallers.GrubThemeInstallerService import GrubThemeInstallerService
+from services.applicationInstallers.GrubThemeInstallerService import GrubThemeInstallerService
+from services.baseInstallers.DriveManagerService import DriveManagerService
+from services.baseInstallers.Ntfs3DriverService import Ntfs3DriverService
+from services.baseInstallers.ExfatSyncService import ExfatSyncService
 from models.config.AppConfig import AppConfig
 
 class BaseSystemInstallerService:
@@ -21,18 +21,26 @@ class BaseSystemInstallerService:
         # dnf system dependencies and packages
         dnfServ = DnfInstallerService(self.view)
         dnfServ.dnfSystemDependenciesAndPackagesInstaller()
-        dnfServ.dnfSystemApplicationsInstaller()
-
-        # Flatpaks
-        FlatpakInstallerService(self.view).flatpakApplicationsInstaller()
-
-        #rpm install
-        RPMPackageInstallerService(self.view).run()
-
-        # appImage Install
-        AppImageInstallerService(self.view).run()
-
+        
         #apply customizations
         if self.appConfig.grub_custom_theme_installation:
             grubCustomizator=GrubThemeInstallerService(self.view, self.appConfig)
             grubCustomizator.run()
+
+        if self.appConfig.ntfs3_driver_installation:
+                    ntfs3Driver = Ntfs3DriverService(self.view)
+                    ntfs3Driver.run()
+
+        if self.appConfig.slave_drive_automount:
+            driveManager = DriveManagerService(self.view, self.appConfig)
+            driveManager.run()
+
+        if self.appConfig.exfat_sync_installation:
+            exfatSync = ExfatSyncService(self.view)
+            exfatSync.run()
+
+        ### TODO: move the actual applications installation to a new AplicationInstallerService Class
+        #dnfServ.dnfSystemApplicationsInstaller() 
+        #FlatpakInstallerService(self.view).flatpakApplicationsInstaller()
+        #RPMPackageInstallerService(self.view).run()
+        #AppImageInstallerService(self.view).run()

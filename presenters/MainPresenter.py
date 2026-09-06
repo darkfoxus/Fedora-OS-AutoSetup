@@ -1,7 +1,6 @@
 from views.mainView import MainView
 from services.BaseSystemInstallerService import BaseSystemInstallerService
-from services.DriveManagerService import DriveManagerService
-from services.Ntfs3DriverService import Ntfs3DriverService
+from services.ApplicationInstallerService import ApplicationInstallerService
 from models.config.AppConfig import AppConfig
 
 
@@ -12,8 +11,7 @@ class MainPresenter:
         self.appConfig = appConfig
 
         self.base_system_service = BaseSystemInstallerService(self.view, self.appConfig)
-        self.drive_manager_service = DriveManagerService(self.view, self.appConfig)
-        self.ntfs3_driver_service = Ntfs3DriverService(self.view)
+        self.application_installer_service = ApplicationInstallerService(self.view)
 
     def main(self) -> None:
         while True:
@@ -25,14 +23,8 @@ class MainPresenter:
             elif choice == MainView.OPTION_BASE_SYSTEM:
                 self.base_system_service.run()
                 self.view.press_any_key()
-            elif choice == MainView.OPTION_NTFS3:
-                self.ntfs3_driver_service.run()
-                self.view.press_any_key()
-            elif choice == MainView.OPTION_DRIVE_MANAGER:
-                if self.appConfig is None:
-                    self.view.show_error("Cannot continue: .env is missing required values")
-                else:
-                    self.drive_manager_service.run()
+            elif choice == MainView.OPTION_APPLICATIONS:
+                self.application_installer_service.run()
                 self.view.press_any_key()
             elif choice == MainView.OPTION_GNOME_BACKUP:
                 # GnomeDesktopPresenter(self.view).backup()

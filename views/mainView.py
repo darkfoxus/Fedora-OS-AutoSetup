@@ -22,18 +22,31 @@ MENU_STYLE = questionary.Style([
     ("pointer", "fg:#00afff bold"),      # the arrow cursor
     ("highlighted", "fg:#00afff bold"),  # currently-selected row
     ("selected", "fg:#00afff"),
+    ("description", "fg:#888888 italic"),  # dimmed inline description text
 ])
+
+
+def _choice(label: str, description: str, value: str) -> Choice:
+    """Builds a Choice whose title is the label plus a dimmed inline
+    description, so every row is self-explanatory without a separate
+    help screen."""
+    return Choice(
+        title=[
+            ("class:text", label),
+            ("class:description", f"  — {description}"),
+        ],
+        value=value,
+    )
 
 
 class MainView:
 
     OPTION_EXIT = "0"
     OPTION_BASE_SYSTEM = "1"
-    OPTION_NTFS3 = "2"
-    OPTION_DRIVE_MANAGER = "3"
-    OPTION_GNOME_BACKUP = "4"
-    OPTION_GNOME_RESTORE = "5"
-    OPTION_RCLONE = "6"
+    OPTION_APPLICATIONS = "2"
+    OPTION_GNOME_BACKUP = "3"
+    OPTION_GNOME_RESTORE = "4"
+    OPTION_RCLONE = "5"
 
     def __init__(self) -> None:
         self.console = Console()
@@ -44,12 +57,31 @@ class MainView:
         choice = questionary.select(
             "Select an option:",
             choices=[
-                Choice("Base system Install", value=self.OPTION_BASE_SYSTEM),
-                Choice("Configure NTFS3 as default NTFS driver", value=self.OPTION_NTFS3),
-                Choice("Mount Slave Drive + Samba shares", value=self.OPTION_DRIVE_MANAGER),
-                Choice("Gnome Desktop backup...", value=self.OPTION_GNOME_BACKUP),
-                Choice("Gnome Desktop restore...", value=self.OPTION_GNOME_RESTORE),
-                Choice("Rclone / Google Drive Sync Options", value=self.OPTION_RCLONE),
+                _choice(
+                    "Base system Install",
+                    "swapfile, dnf deps, drive mount, ntfs3/exfat sync fixes",
+                    self.OPTION_BASE_SYSTEM,
+                ),
+                _choice(
+                    "Install Applications",
+                    "dnf, flatpak, rpm packages, appimages",
+                    self.OPTION_APPLICATIONS,
+                ),
+                _choice(
+                    "Gnome Desktop backup...",
+                    "not ported yet",
+                    self.OPTION_GNOME_BACKUP,
+                ),
+                _choice(
+                    "Gnome Desktop restore...",
+                    "not ported yet",
+                    self.OPTION_GNOME_RESTORE,
+                ),
+                _choice(
+                    "Rclone / Google Drive Sync Options",
+                    "not ported yet",
+                    self.OPTION_RCLONE,
+                ),
                 Choice("Exit", value=self.OPTION_EXIT),
             ],
             style=MENU_STYLE,
@@ -71,15 +103,15 @@ class MainView:
     # ---- generic status reporting, used by every presenter ----
     def show_step(self, message: str) -> None:
         self.console.print(f"[bold blue]→[/bold blue] {message}")
- 
+
     def show_success(self, message: str) -> None:
         self.console.print(f"[bold green]✓[/bold green] {message}")
- 
+
     def show_warning(self, message: str) -> None:
         self.console.print(f"[bold yellow]![/bold yellow] {message}")
- 
+
     def show_error(self, message: str) -> None:
         self.console.print(f"[bold red]✗[/bold red] {message}")
- 
+
     def press_any_key(self) -> None:
         questionary.press_any_key_to_continue("Press any key to return to the main menu...").ask()
