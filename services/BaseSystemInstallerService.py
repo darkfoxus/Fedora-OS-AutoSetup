@@ -38,9 +38,3 @@ class BaseSystemInstallerService:
         if self.appConfig.exfat_sync_installation:
             exfatSync = ExfatSyncService(self.view)
             exfatSync.run()
-
-        ### TODO: move the actual applications installation to a new AplicationInstallerService Class
-        #dnfServ.dnfSystemApplicationsInstaller() 
-        #FlatpakInstallerService(self.view).flatpakApplicationsInstaller()
-        #RPMPackageInstallerService(self.view).run()
-        #AppImageInstallerService(self.view).run()

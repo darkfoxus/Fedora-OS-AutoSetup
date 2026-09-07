@@ -52,19 +52,20 @@ class AppConfig:
         missing: list[str] = []
 
         def require(key: str) -> str:
-            value = values.get(key, "").strip()
-            if not value:
+            if key not in values:
                 missing.append(key)
-            return value
+                return ""
+            return values[key].strip()
 
         def optional(key: str, default: str = "") -> str:
             return values.get(key, default).strip()
 
-        def boolean(key: str, default: bool = False) -> bool:
-            raw = values.get(key)
-            if raw is None:
+        def boolean(key: str, *, required: bool = True, default: bool = False) -> bool:
+            if key not in values:
+                if required:
+                    missing.append(key)
                 return default
-            return raw.strip().lower() in ("1", "true", "yes", "on")
+            return values[key].strip().lower() in ("1", "true", "yes", "on")
  
         grub_theme_enabled = boolean("GRUB_CUSTOM_THEME_INSTALATION")
 

@@ -38,7 +38,8 @@ class DriveManagerService:
 
     def run(self) -> None:
         self.view.show_step("=" * 60)
-        self.view.show_step("MOUNTING SLAVE DRIVE + SAMBA SHARES")
+        self.view.show_step("MOUNTING SLAVE DRIVE")
+        #self.view.show_step("MOUNTING SLAVE DRIVE + SAMBA SHARES")
 
         steps = [
             ("Slave drive mount", self._add_slave_mount),
@@ -51,8 +52,8 @@ class DriveManagerService:
             if not step_fn():
                 self.view.show_error(f"Stopped at: {step_name}")
                 return
-
-        self.view.show_success("✓ DRIVE + SAMBA SETUP COMPLETE")
+        self.view.show_success("✓ Slave DRIVE Mount COMPLETE")
+        #self.view.show_success("✓ DRIVE + SAMBA SETUP COMPLETE")
         self.view.show_step("=" * 60)
 
     # ==========================================================
@@ -161,6 +162,11 @@ class DriveManagerService:
 
         self.view.show_step(f"Updating fstab entry → {entry}")
         if not self._write_root_file(self.FSTAB, new_content):
+            return False
+
+        self.view.show_step("Reloading systemd (fstab changed)")
+        result = self.commandRunner.run(["sudo", "systemctl", "daemon-reload"])
+        if not self._checked(result, "Failed to reload systemd"):
             return False
 
         result = self.commandRunner.run(["sudo", "mkdir", "-p", mountpoint])
