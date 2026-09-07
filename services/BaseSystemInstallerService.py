@@ -35,6 +35,7 @@ class BaseSystemInstallerService:
             driveManager = DriveManagerService(self.view, self.appConfig)
             driveManager.run()
 
-        if self.appConfig.exfat_sync_installation:
-            exfatSync = ExfatSyncService(self.view)
-            exfatSync.run()
+        # removed cause it was extremely slow on doplhin ntfs external drives
+        #if self.appConfig.exfat_sync_installation:
+        #    exfatSync = ExfatSyncService(self.view)
+        #    exfatSync.run()

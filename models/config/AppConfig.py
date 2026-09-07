@@ -28,7 +28,6 @@ class AppConfig:
 
     # udisks2 mount behavior properties
     ntfs3_driver_installation: bool
-    exfat_sync_installation: bool
 
     # samba seerver properties
     samba_server: str
@@ -86,7 +85,6 @@ class AppConfig:
                 "SLAVE_DRIVE_MOUNT_WITH_EXECUTION_PERMISSIONS"),
 
             ntfs3_driver_installation=boolean("NTFS3_DRIVER_INSTALLATION"),
-            exfat_sync_installation=boolean("EXFAT_SYNC_INSTALLATION"),
             
             samba_server=require("SAMBA_SERVER"),
             samba_share=require("SAMBA_SHARE"),

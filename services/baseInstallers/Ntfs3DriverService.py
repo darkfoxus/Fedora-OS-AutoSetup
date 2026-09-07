@@ -40,7 +40,7 @@ class Ntfs3DriverService:
         "prealloc,noprealloc,"
         "hide_dot_files,nohide_dot_files,"
         "windows_names,nocase,case,"
-        "sync"  # must also be in the allow-list, or udisks2 will reject/strip it
+        #"sync"  # must also be in the allow-list, or udisks2 will reject/strip it
     )
 
     NTFS3_DRIVERS = "ntfs_drivers=ntfs3,ntfs"
