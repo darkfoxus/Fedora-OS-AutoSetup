@@ -2,9 +2,16 @@ from services.baseInstallers.SwapFileService import SwapFileService
 from services.baseInstallers.DnfInstallerService import DnfInstallerService
 from services.applicationInstallers.GrubThemeInstallerService import GrubThemeInstallerService
 from services.baseInstallers.DriveManagerService import DriveManagerService
-from services.baseInstallers.Ntfs3DriverService import Ntfs3DriverService
+
 from services.baseInstallers.ExfatSyncService import ExfatSyncService
 from models.config.AppConfig import AppConfig
+
+# this import is becoming legacy, and is maintained in the code as history, but we aim to not use it anymore as it will be reaplced by
+    # NTFSPLUS
+    # ntfs3 driver setup removed (2026-10-12): the slave drive now uses
+    # ntfs-3g via fstab. See DriveManagerService for the reason.
+    #from services.baseInstallers.Ntfs3DriverService import Ntfs3DriverService
+
 
 class BaseSystemInstallerService:
 
@@ -26,10 +33,6 @@ class BaseSystemInstallerService:
         if self.appConfig.grub_custom_theme_installation:
             grubCustomizator=GrubThemeInstallerService(self.view, self.appConfig)
             grubCustomizator.run()
-
-        if self.appConfig.ntfs3_driver_installation:
-                    ntfs3Driver = Ntfs3DriverService(self.view)
-                    ntfs3Driver.run()
 
         if self.appConfig.slave_drive_automount:
             driveManager = DriveManagerService(self.view, self.appConfig)

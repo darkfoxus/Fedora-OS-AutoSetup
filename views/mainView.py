@@ -59,7 +59,7 @@ class MainView:
             choices=[
                 _choice(
                     "Base system Install",
-                    "swapfile, dnf deps, drive mount, ntfs3/exfat sync fixes",
+                    "swapfile, dnf deps, drive mount, ntfs/exfat sync fixes",
                     self.OPTION_BASE_SYSTEM,
                 ),
                 _choice(

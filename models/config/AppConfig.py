@@ -27,7 +27,7 @@ class AppConfig:
     slave_drive_mount_with_execution_permissions: bool
 
     # udisks2 mount behavior properties
-    ntfs3_driver_installation: bool
+    #ntfs3_driver_installation: bool
 
     # samba seerver properties
     samba_server: str
@@ -84,7 +84,8 @@ class AppConfig:
             slave_drive_mount_with_execution_permissions=boolean(
                 "SLAVE_DRIVE_MOUNT_WITH_EXECUTION_PERMISSIONS"),
 
-            ntfs3_driver_installation=boolean("NTFS3_DRIVER_INSTALLATION"),
+            # Legacy
+            # ntfs3_driver_installation=boolean("NTFS3_DRIVER_INSTALLATION"),
             
             samba_server=require("SAMBA_SERVER"),
             samba_share=require("SAMBA_SHARE"),

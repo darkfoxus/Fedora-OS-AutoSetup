@@ -5,8 +5,18 @@ sets up a Samba network share via autofs.
 /etc/fstab and /etc/auto.master/auto.lan are root-owned, so writes to them go through
 `sudo tee`, but reading and filtering their existing content (to avoid duplicate entries 
 across runs) happens in pure Python. /etc/fstab and /etc/auto.master get a one-time backup
-before their first rewrite, since a broken fstab can mean an unbootablesystem — that risk 
+before their first rewrite, since a broken fstab can mean an unbootable system — that risk 
 doesn't apply to auto.lan, which this service owns outright.
+
+Filesystem driver: the slave NTFS drive is mounted with ntfs-3g (FUSE),
+not the in-kernel ntfs3. On 2026-10-12 (Fedora 44, kernel 7.2.9) ntfs3
+returned "Input/output error" when creating files/directories on this
+volume (SMART clean; appends to existing files worked); ntfs-3g handled
+the same volume fine. Root cause not identified. Earlier (Aug 2026)
+ntfs-3g had been replaced by ntfs3 because of slowness and I/O errors,
+so this choice may need revisiting; chkdsk from Windows is the test that
+separates a bad volume from a bad driver. When Fedora enables NTFSPLUS,
+change NTFS_DRIVER to "ntfs".
 """
 
 from __future__ import annotations
@@ -26,6 +36,9 @@ class DriveManagerService:
     AUTO_MASTER = Path("/etc/auto.master")
     AUTO_LAN = Path("/etc/auto.lan")
     FSTAB = Path("/etc/fstab")
+
+    # TODO: ntfs when Fedora enables NTFSPLUS
+    NTFS_DRIVER = "ntfs-3g"   # swap to "ntfs" when Fedora enables NTFSPLUS
 
     def __init__(self, view, appConfig: AppConfig):
         self.view = view
@@ -132,10 +145,13 @@ class DriveManagerService:
                 # same oprions besides fmask
             )
 
-        # ntfs3 is the in-kernel driver (mainlined since 5.15+, built into
-        # Fedora's kernel) — no package required, and more robust against
-        # interrupted writes than the ntfs-3g FUSE driver.
-        entry = f"UUID={self.appConfig.slave_drive_uuid} {mountpoint} ntfs3 {options} 0 0"
+        # ntfs-3g (FUSE) instead of the kernel ntfs3: ntfs3 failed on file creation on this machine (see module docstring). 
+        # The speed gap is irrelevant on a mechanical drive, and ntfs-3g tolerates volume states that ntfs3 rejects. 
+        # dmask/fmask/exec/noexec are valid ntfs-3g options, so `options` stays unchanged.
+        entry = (
+            f"UUID={self.appConfig.slave_drive_uuid} {mountpoint} "
+            f"{self.NTFS_DRIVER} {options} 0 0"
+        )
 
         if not self._is_package_installed("ntfs-3g"):
             self.view.show_step("Installing ntfs-3g")
