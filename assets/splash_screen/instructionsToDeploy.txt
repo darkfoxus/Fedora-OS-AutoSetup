@@ -1,0 +1,4 @@
+mkdir -p ~/.local/share/plasma/look-and-feel
+tar -xzf sacred-blue-flame.tar.gz -C ~/.local/share/plasma/look-and-feel
+kwriteconfig6 --file ksplashrc --group KSplash --key Engine KSplashQML
+kwriteconfig6 --file ksplashrc --group KSplash --key Theme com.zarvael.sacred-blue-flame
